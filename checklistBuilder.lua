@@ -12,6 +12,7 @@ DialogChecklistBuilder.__index = DialogChecklistBuilder
 -- Default layout constants
 ------------------------------------------------------------
 local DEFAULTS = {
+  rebuild = true,
   windowX = 200, windowY = 150, windowW = 640, windowH = 420,
   contentTopY = 15 + (20 * 1.2) + 10, -- row2 + 10 with row1=margin=15, rowSpacing=buttonHeight*1.2
   contentHeight = 380,
@@ -399,7 +400,6 @@ function DialogChecklistBuilder:build()
     ["children"] = children,
   }
 
-  -- emit as `dialog = { ... }`
   local out = "dialog = " .. serialize(root) .. "\n"
   return out
 end
@@ -411,20 +411,24 @@ end
 function DialogChecklistBuilder:write(relPath)
     local base = LockOn_Options.script_path
     local full = lfs.normpath(base .. relPath)
+    
+    if self.cfg.rebuild then
+        -- ensure parent folder exists
+        local folder = full:match("^(.*)[/\\][^/\\]+$")
+        if folder then
+            lfs.mkdir(folder)
+        end
 
-    -- ensure parent folder exists
-    local folder = full:match("^(.*)[/\\][^/\\]+$")
-    if folder then
-        lfs.mkdir(folder)  -- safe: DCS's mkdir just no-ops if it already exists
+        local f, err = io.open(full, "wb")
+        if not f then
+            error("Failed to open " .. tostring(full) .. ": " .. tostring(err))
+        end
+        f:write(self:build())
+        f:close()
+        return full
+    else -- still return the filename, but don't write a new file
+        return full
     end
-
-    local f, err = io.open(full, "wb")
-    if not f then
-        error("Failed to open " .. tostring(full) .. ": " .. tostring(err))
-    end
-    f:write(self:build()) -- your dialog string
-    f:close()
-    return full
 end
 
 ------------------------------------------------------------
