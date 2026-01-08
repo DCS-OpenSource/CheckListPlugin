@@ -10,6 +10,7 @@ Checklist.__index = Checklist
 function Checklist:new(name)
     local self = setmetatable({}, Checklist)
     self.visible = false
+    self.heading = ColorTextStatic.new(name or checklist)
 
     self.name = name or "Checklist"
     self.items = {}
@@ -36,6 +37,7 @@ end
 
 function Checklist:setVisible(visible)
     self.visible = visible
+    self.heading:setVisible(self.visible)
     for _, item in pairs(self.items) do
         item.checkbox:setVisible(self.visible)
     end

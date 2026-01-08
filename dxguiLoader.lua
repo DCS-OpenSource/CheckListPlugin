@@ -13,4 +13,5 @@ package.path = package.path..';./Scripts/?.lua;'
 Window = require('Window')
 Button = require('Button')
 CheckBox = require('CheckBox')
+ColorTextStatic = require("ColorTextStatic")
 

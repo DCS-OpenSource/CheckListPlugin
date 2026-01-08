@@ -24,7 +24,6 @@ function ChecklistWindow:new(name)
 end
 
 
-
 --- Function to change current checklist
 --- @param newChecklist table Checklist item to swap to.
 function ChecklistWindow:swapPage(newChecklist)
@@ -38,10 +37,11 @@ end
 --- Function to add checklist to window
 --- @param checklist table checklist object.
 function ChecklistWindow:addChecklist(checklist)
+    checklist.heading:setBounds((20), (10), 400, 15)
+    self.ui:insertWidget(checklist.heading)
     local i = 0
     for _, item in pairs(checklist.items) do
-        print_message_to_user("Inserting Checklist Item: i: ".. i + 1 .. " name: ".. item.name)
-        item.checkbox:setBounds((20), (20 * i) + 5, 400, 15)
+        item.checkbox:setBounds((20), (20 * i) + 30, 400, 15)
         self.ui:insertWidget(item.checkbox)
         i = i + 1
     end
