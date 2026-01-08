@@ -14,4 +14,5 @@ Window = require('Window')
 Button = require('Button')
 CheckBox = require('CheckBox')
 ColorTextStatic = require("ColorTextStatic")
+ComboList = require("ComboList")
 

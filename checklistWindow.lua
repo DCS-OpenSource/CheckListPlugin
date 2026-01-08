@@ -14,9 +14,32 @@ function ChecklistWindow:new(name)
 
     self.visible = false
     self.checklists = {}
+
     self.ui = Window.new(100, 100, 500, 500, name)
 
-    self.ui.onClose = function() self.visible = false end -- set visible state if checklist is closed with x instead of keybind
+    -- Heading/dropdown for checklist swapping
+    self.headingDropdown = ComboList.new()
+    self.headingDropdown:setBounds(20, 10, 400, 15)
+    self.headingDropdown:setVisible(true)
+    self.ui:insertWidget(self.headingDropdown)
+
+    local window = self -- need reference for inside dropdown class, see below
+
+    -- Configure heading box callback
+    function self.headingDropdown:onChange(item)
+        if not item then return end
+
+        local name = item:getText()
+
+        for _, checklist in pairs(window.checklists) do
+            if checklist.name == name then
+                window:swapPage(checklist) -- self doesn't work here
+                break
+            end
+        end
+    end
+
+    self.ui.onClose = function() self.visible = false end -- update the state of visibile if user manually closes window
 
     self.ui:setVisible(self.visible)
 
@@ -27,6 +50,7 @@ end
 --- Function to change current checklist
 --- @param newChecklist table Checklist item to swap to.
 function ChecklistWindow:swapPage(newChecklist)
+    self.headingDropdown:setText(newChecklist.name)
     for _, list in pairs(self.checklists) do
         list:setVisible(false)
     end
@@ -37,14 +61,15 @@ end
 --- Function to add checklist to window
 --- @param checklist table checklist object.
 function ChecklistWindow:addChecklist(checklist)
-    checklist.heading:setBounds((20), (10), 400, 15)
-    self.ui:insertWidget(checklist.heading)
+    self.headingDropdown:newItem(checklist.name) -- Add Checklist to dropdown
+
     local i = 0
     for _, item in pairs(checklist.items) do
-        item.checkbox:setBounds((20), (20 * i) + 30, 400, 15)
+        item.checkbox:setBounds(20, (20 * i) + 30, 400, 15)
         self.ui:insertWidget(item.checkbox)
         i = i + 1
     end
+
     table.insert(self.checklists, checklist)
 end
 
