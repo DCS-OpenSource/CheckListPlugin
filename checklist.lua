@@ -27,10 +27,13 @@ end
 function Checklist:addItem(name, clickable, completionCallback)
     local item = {}
 
+    local checkbox = CheckBox.new(name)
+    checkbox:setSkin(Skin.getSkin("checkBoxSkin_options"))
+
     item["name"] = name
     item["clickable"] = clickable
     item["callback"] = completionCallback
-    item["checkbox"] = CheckBox.new(name)
+    item["checkbox"] = checkbox
 
     table.insert(self.items, item)
 end

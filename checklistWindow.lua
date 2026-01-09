@@ -5,6 +5,9 @@ package.path = package.path..";"..LockOn_Options.script_path.."CheckListPlugin/?
 
 require("dxguiLoader")
 
+local windowSkin = require("skins.CheckListWindowSkin1")
+local dropdownSkin = require("skins.DropdownSKin1")
+
 local ChecklistWindow = {}
 ChecklistWindow.__index = ChecklistWindow
 
@@ -16,11 +19,13 @@ function ChecklistWindow:new(name)
     self.checklists = {}
 
     self.ui = Window.new(100, 100, 500, 500, name)
+    self.ui:setSkin(windowSkin)
 
     -- Heading/dropdown for checklist swapping
     self.headingDropdown = ComboList.new()
-    self.headingDropdown:setBounds(20, 10, 400, 15)
+    self.headingDropdown:setBounds(20, 10, 300, 20)
     self.headingDropdown:setVisible(true)
+    self.headingDropdown:setSkin(dropdownSkin)
     self.ui:insertWidget(self.headingDropdown)
 
     local window = self -- need reference for inside dropdown class, see below
@@ -65,7 +70,7 @@ function ChecklistWindow:addChecklist(checklist)
 
     local i = 0
     for _, item in pairs(checklist.items) do
-        item.checkbox:setBounds(20, (20 * i) + 30, 400, 15)
+        item.checkbox:setBounds(20, (20 * i) + 40, 400, 20)
         self.ui:insertWidget(item.checkbox)
         i = i + 1
     end

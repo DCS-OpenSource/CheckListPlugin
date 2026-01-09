@@ -1,5 +1,3 @@
--- TODO when the time comes point gunner UI to this file, and remove the one in there
-
 -- This is needed to make DXGUI work in the aircraft Lua environment
 package.path = package.path..';./Scripts/?.lua;'
     ..'./Scripts/Common/?.lua;./Scripts/UI/?.lua;'
@@ -10,9 +8,12 @@ package.path = package.path..';./Scripts/?.lua;'
     .. './Scripts/Debug/?.lua;'
     .. './Scripts/Input/?.lua;'
 
+
+-- Load Object Modules from DCS Core. (More are available, these ones have been tested)
 Window = require('Window')
 Button = require('Button')
 CheckBox = require('CheckBox')
 ColorTextStatic = require("ColorTextStatic")
 ComboList = require("ComboList")
+Skin = require("Skin")
 
