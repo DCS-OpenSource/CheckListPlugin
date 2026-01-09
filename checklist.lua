@@ -46,4 +46,10 @@ function Checklist:setVisible(visible)
     end
 end
 
+function Checklist:addTable(list)
+    for key, item in ipairs(list) do
+        self:addItem(item[1], item[2], item[3])
+    end
+end
+
 return Checklist
