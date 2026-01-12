@@ -49,9 +49,10 @@ function ChecklistWindow:new(name, categories, checklists)
     self.visible = false
     self.checklists = {}
 
-    self.checklistComplex = makeComplex(categories, checklists)
-    self.categories      = categories or nil
-    self.complexity      = nil
+    self.checklistComplex   = makeComplex(categories, checklists)
+    self.categories         = categories or nil
+    self.complexity         = nil
+    self.showMe             = false
 
     -- Current state
     self.currentChecklistKey   = nil
@@ -60,7 +61,7 @@ function ChecklistWindow:new(name, categories, checklists)
     -- --------------------------------------------------------
     -- Window
     -- --------------------------------------------------------
-    self.ui = Window.new(100, 100, 500, 500, name)
+    self.ui = Window.new(100, 100, 540, 500, name)
     self.ui:setSkin(windowSkin)
 
     -- --------------------------------------------------------
@@ -109,10 +110,6 @@ function ChecklistWindow:new(name, categories, checklists)
     -- --------------------------------------------------------
     -- Checklist dropdown callback
     -- --------------------------------------------------------
-
-    --- Called when the checklist selection changes.
-    --- Switches the active checklist page.
-    ---@param item table Selected ComboList item
     function self.headingDropdown:onChange(item)
         if not item then return end
 
@@ -129,14 +126,24 @@ function ChecklistWindow:new(name, categories, checklists)
     -- --------------------------------------------------------
     -- Complexity dropdown callback
     -- --------------------------------------------------------
-
-    --- Called when the complexity selection changes.
-    --- Reloads the current checklist with the new complexity.
-    ---@param item table Selected ComboList item
     function self.detailDropdown:onChange(item)
         if not item then return end
         window.complexity = item:getText()
         window:swapPage()
+    end
+
+    -- --------------------------------------------------------
+    -- ShowMe CheckBox
+    -- --------------------------------------------------------
+    self.showMeCheckBox = CheckBox.new("Show Me")
+    self.showMeCheckBox:setBounds(440, 10, 100, 20)
+    self.showMeCheckBox:setVisible(true)
+    self.showMeCheckBox:setSkin(Skin.getSkin("checkBoxSkin_options"))
+    self.ui:insertWidget(self.showMeCheckBox)
+
+    -- Callback
+    function self.showMeCheckBox:onChange()
+        self.showMe = window.showMeCheckBox:getState()
     end
 
     -- --------------------------------------------------------

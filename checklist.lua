@@ -34,6 +34,10 @@ function Checklist:addItem(name, clickable, completionCallback)
     item["clickable"] = clickable
     item["callback"] = completionCallback
     item["checkbox"] = checkbox
+    
+    function checkbox:onChange()
+        print_message_to_user(name .. " " .. tostring(checkbox:getState()))
+    end
 
     table.insert(self.items, item)
 end
