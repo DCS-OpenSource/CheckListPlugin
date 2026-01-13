@@ -127,7 +127,7 @@ function ChecklistWindow:new(name, categories, checklists)
     -- Complexity dropdown callback
     -- --------------------------------------------------------
     function self.detailDropdown:onChange(item)
-        if not item then return end
+        if not item then return end 
         window.complexity = item:getText()
         window:swapPage()
     end
@@ -143,8 +143,15 @@ function ChecklistWindow:new(name, categories, checklists)
 
     -- Callback
     function self.showMeCheckBox:onChange()
-        self.showMe = window.showMeCheckBox:getState()
+        window.showMe = window.showMeCheckBox:getState()
+        if window.currentChecklistGroup and window.complexity then
+            local checklist = window.currentChecklistGroup[window.complexity]
+            if checklist then
+                checklist:setShowMe(window.showMe)
+            end
+        end
     end
+
 
     -- --------------------------------------------------------
     -- Window close handler
