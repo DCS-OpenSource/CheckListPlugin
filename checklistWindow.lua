@@ -160,7 +160,9 @@ function ChecklistWindow:new(name, categories, checklists)
     -- --------------------------------------------------------
     self.ui.onClose = function()
         self.visible = false
+        window:_clearActiveChecklistHighlights()
     end
+
 
     self.ui:setVisible(self.visible)
     return self
@@ -175,6 +177,9 @@ end
 --- Otherwise reloads the current checklist using the active complexity.
 ---@param checklistKey string|nil Checklist id to switch to
 function ChecklistWindow:swapPage(checklistKey)
+    -- Clear highlights from previous checklist
+    self:_clearActiveChecklistHighlights()
+
     hideAllChecklists(self.checklists)
 
     if checklistKey then
@@ -192,8 +197,10 @@ function ChecklistWindow:swapPage(checklistKey)
     local checklist = self.currentChecklistGroup[self.complexity]
     if checklist then
         checklist:setVisible(true)
+        self:_activateActiveChecklist()
     end
 end
+
 
 -- ------------------------------------------------------------
 -- Complexity management
@@ -202,9 +209,49 @@ end
 --- Sets the active checklist complexity.
 ---@param complexity string Complexity key (e.g. "Sim", "Simple")
 function ChecklistWindow:swapComplexity(complexity)
+    self:_clearActiveChecklistHighlights()
+
     self.complexity = complexity
     self.detailDropdown:setText(self.complexity)
+
+    self:swapPage()
 end
+
+
+
+------------------------------------------------------------
+-- Internal cleanup / activation
+------------------------------------------------------------
+
+--- Clears cockpit highlights for the currently active checklist.
+function ChecklistWindow:_clearActiveChecklistHighlights()
+    if not self.currentChecklistGroup or not self.complexity then
+        return
+    end
+
+    local checklist = self.currentChecklistGroup[self.complexity]
+    if checklist and checklist.clearHighlights then
+        checklist:clearHighlights()
+    end
+end
+
+
+--- Applies Show Me highlighting to the active checklist if enabled.
+function ChecklistWindow:_activateActiveChecklist()
+    if not self.showMe then
+        return
+    end
+
+    if not self.currentChecklistGroup or not self.complexity then
+        return
+    end
+
+    local checklist = self.currentChecklistGroup[self.complexity]
+    if checklist and checklist.setShowMe then
+        checklist:setShowMe(true)
+    end
+end
+
 
 -- ------------------------------------------------------------
 -- Visibility control
@@ -215,12 +262,25 @@ end
 function ChecklistWindow:showChecklist(visible)
     self.visible = visible
     self.ui:setVisible(self.visible)
+
+    if not visible then
+        self:_clearActiveChecklistHighlights()
+    else
+        self:_activateActiveChecklist()
+    end
 end
+
+
 
 --- Toggles checklist window visibility.
 function ChecklistWindow:toggleChecklist()
     self.visible = not self.visible
     self.ui:setVisible(self.visible)
+    if not self.visible then
+        self:_clearActiveChecklistHighlights()
+    else
+        self:_activateActiveChecklist()
+    end
 end
 
 -- ------------------------------------------------------------

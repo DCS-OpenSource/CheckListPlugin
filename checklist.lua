@@ -193,6 +193,13 @@ function Checklist:setShowMe(enabled)
 end
 
 
+function Checklist:clearHighlights()
+    for _, item in ipairs(self.items) do
+        removeItemHighlights(item)
+    end
+end
+
+
 function Checklist:setVisible(visible)
     self.visible = visible
     self.heading:setVisible(self.visible)
@@ -200,7 +207,12 @@ function Checklist:setVisible(visible)
     for _, item in ipairs(self.items) do
         item.checkbox:setVisible(self.visible)
     end
+
+    if not visible then
+        self:clearHighlights()
+    end
 end
+
 
 
 function Checklist:addTable(list)
