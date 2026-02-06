@@ -4,41 +4,142 @@
 package.path = package.path..";"..LockOn_Options.script_path.."CheckListPlugin/?.lua"
 require("dxguiLoader")
 
+------------------------------------------------------------
+-- Highlight ID management
+------------------------------------------------------------
 
-local function incrementClickable(index, clickable, showMe)
-    if not showMe then return end
-    a_cockpit_remove_highlight(index - 1)
-    a_cockpit_highlight(index, clickable, 0.05, "")
+-- Global increasing highlight index
+local NEXT_HIGHLIGHT_INDEX = 1
+
+
+------------------------------------------------------------
+-- Clickable helpers
+------------------------------------------------------------
+
+-- Normalize clickable descriptor into a flat list
+local function resolveClickables(clickable)
+    if not clickable then return {} end
+
+    if type(clickable) == "string" then
+        return { { switch = clickable, size = 0.05 } }
+    end
+
+    if clickable.switch or clickable.position then
+        return { clickable }
+    end
+
+    if clickable.group then
+        return clickable.group
+    end
+
+    return {}
 end
 
-local function decrementClickable(index, clickable, showMe)
+
+local function highlightItem(item, showMe)
     if not showMe then return end
-    a_cockpit_remove_highlight(index + 1)
-    a_cockpit_highlight(index, clickable, 0.05, "")
+    if not item.clickable then return end
+
+    item.highlightIndices = {}
+
+    local list = resolveClickables(item.clickable)
+
+    for _, c in ipairs(list) do
+        local id = NEXT_HIGHLIGHT_INDEX
+        NEXT_HIGHLIGHT_INDEX = NEXT_HIGHLIGHT_INDEX + 1
+
+        -- Switch-based highlight
+        if c.switch then
+            a_cockpit_highlight(id, c.switch, c.size or 0.05, "")
+
+        -- Position-based highlight
+        elseif c.position then
+            local size = c.size or 0.05
+            a_cockpit_highlight_position(id, c.position[1], c.position[2], c.position[3], size, size, size)
+        end
+
+        table.insert(item.highlightIndices, id)
+    end
 end
 
+
+-- Remove exactly the highlights that were added for this item
+local function removeItemHighlights(item)
+    if not item or not item.highlightIndices then
+        return
+    end
+
+    for _, id in ipairs(item.highlightIndices) do
+        a_cockpit_remove_highlight(id)
+    end
+
+    item.highlightIndices = nil
+end
+
+
+------------------------------------------------------------
+-- Checklist class
+------------------------------------------------------------
 
 local Checklist = {}
 Checklist.__index = Checklist
 
 function Checklist:new(name)
     local self = setmetatable({}, Checklist)
-    self.visible = false
-    self.heading = ColorTextStatic.new(name or checklist)
-    self.index = 1
 
-    self.name = name or "Checklist"
-    self.items = {}
+    self.visible = false
+    self.heading = ColorTextStatic.new(name or "Checklist")
+    self.index   = 1
+    self.name    = name or "Checklist"
+    self.items   = {}
+    self.showMe  = false
 
     return self
 end
 
 
---- Function to add items to checklist
+------------------------------------------------------------
+-- Internal step control
+------------------------------------------------------------
+
+local function advanceStep(checklist)
+    local current = checklist.items[checklist.index]
+    if current then
+        removeItemHighlights(current)
+    end
+
+    checklist.index = checklist.index + 1
+
+    local nextItem = checklist.items[checklist.index]
+    if nextItem then
+        highlightItem(nextItem, checklist.showMe)
+    end
+end
+
+
+local function revertStep(checklist)
+    local current = checklist.items[checklist.index]
+    if current then
+        removeItemHighlights(current)
+    end
+
+    checklist.index = checklist.index - 1
+
+    local prev = checklist.items[checklist.index]
+    if prev then
+        highlightItem(prev, checklist.showMe)
+    end
+end
+
+
+------------------------------------------------------------
+-- Public API
+------------------------------------------------------------
+
+--- Add an item to the checklist
 --- @param name string Text to show on the checklist
---- @param clickable string|nil Clickable name for cockpit Hightlight
---- @param completionCallback function|nil Callback function to check if completed
---- @return nil nil Checklist Item is added to Checklist class items field (object.items)
+--- @param clickable string|table|nil Clickable descriptor or group
+--- @param completionCallback function|nil Callback to check completion
 function Checklist:addItem(name, clickable, completionCallback)
     local item = {}
 
@@ -52,42 +153,41 @@ function Checklist:addItem(name, clickable, completionCallback)
     item.callback  = completionCallback
     item.checkbox  = checkbox
     item.index     = index
+    item.highlightIndices = nil
 
     local checklist = self
 
     function checkbox:onChange()
-        if item.checkbox:getState() == true then -- CHECK
+        if item.checkbox:getState() == true then
+            -- CHECK
             if item.index == checklist.index then
-                checklist.index = checklist.index + 1
-                if checklist.index <= #checklist.items then
-                    incrementClickable(checklist.index, checklist.items[checklist.index].clickable, checklist.showMe)
-                else
-                    a_cockpit_remove_highlight(#checklist.items) -- checklist complete
-                end
+                advanceStep(checklist)
             end
-        else -- UNCHECK
-            if item.index == checklist.index - 1 then -- undo last completed item
-                checklist.index = checklist.index - 1 -- step back
-                decrementClickable(checklist.index, checklist.items[checklist.index].clickable, checklist.showMe)
+        else
+            -- UNCHECK
+            if item.index == checklist.index - 1 then
+                revertStep(checklist)
             end
         end
     end
+
     table.insert(self.items, item)
 end
 
 
 function Checklist:setShowMe(enabled)
     self.showMe = enabled
-    if not enabled then
-        for _, item in ipairs(self.items) do
-            a_cockpit_remove_highlight(item.index)
-        end
-    else
-        if self.index <= #self.items then
-            local item = self.items[self.index]
-            if item and item.clickable then
-                a_cockpit_highlight(self.index, item.clickable, 0.05, "")
-            end
+
+    -- Clear all highlights first
+    for _, item in ipairs(self.items) do
+        removeItemHighlights(item)
+    end
+
+    -- Restore current step if enabled
+    if enabled then
+        local item = self.items[self.index]
+        if item then
+            highlightItem(item, true)
         end
     end
 end
@@ -96,15 +196,18 @@ end
 function Checklist:setVisible(visible)
     self.visible = visible
     self.heading:setVisible(self.visible)
-    for _, item in pairs(self.items) do
+
+    for _, item in ipairs(self.items) do
         item.checkbox:setVisible(self.visible)
     end
 end
 
+
 function Checklist:addTable(list)
-    for key, item in ipairs(list) do
+    for _, item in ipairs(list) do
         self:addItem(item[1], item[2], item[3])
     end
 end
+
 
 return Checklist
